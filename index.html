@@ -1,0 +1,403 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <meta name="theme-color" content="#fafafa">
+
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script defer>
+    let users = [];
+
+    let eventsToUsers = [];   // события, у которых есть пользователи
+    let eventsToNull = [];    // события, у которых нет пользователей
+
+
+    let xhrUsers = new XMLHttpRequest();
+
+    xhrUsers.open('GET', 'https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/users', false); // синхронный запрос для корректности вывода данных в таблицу
+
+    //  xhr.responseType = 'json';
+
+    try {
+      xhrUsers.send();
+      if (xhrUsers.status != 200) {
+        alert(`Ошибка ${xhrUsers.status}: ${xhrUsers.statusText} с источника: https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/users`);
+      } else {
+        let xhrUsersJson = JSON.parse(xhrUsers.response);
+        for (let i = 0; i < 15; i++) {
+          users.push({
+            id: `${xhrUsersJson[i].id}`,
+            username: `${xhrUsersJson[i].username}`,
+            fio: `${xhrUsersJson[i].surname} ${xhrUsersJson[i].firstName}`
+          });
+        }
+
+      }
+    } catch(err) {
+      alert("Запрос не удался с источника: https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/users");
+    }
+
+
+
+    let xhrTasks = new XMLHttpRequest();
+
+    xhrTasks.open('GET', 'https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/tasks', false); // синхронный запрос для корректности вывода данных в таблицу
+
+    //  xhr.responseType = 'json';
+
+    try {
+      xhrTasks.send();
+      if (xhrTasks.status != 200) {
+        alert(`Ошибка ${xhrTasks.status}: ${xhrTasks.statusText} с источника: https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/tasks`);
+      } else {
+        let xhrTasksJson = JSON.parse(xhrTasks.response);
+
+        for (let i = 0; i < xhrTasksJson.length - 1; i++) {
+
+          let tempDuration = Date.parse(`${xhrTasksJson[i].planEndDate}`) - Date.parse(`${xhrTasksJson[i].planStartDate}`)
+
+          if (xhrTasksJson[i].executor != null) {
+
+            eventsToUsers.push({
+              resourceId: `${xhrTasksJson[i].executor}`,
+              title: `${xhrTasksJson[i].subject}`,
+              start: `${xhrTasksJson[i].planStartDate}`,
+              end: `${xhrTasksJson[i].planEndDate}`,
+              extendedProps: {
+                durationHours: `${parseInt(tempDuration) / (1000 * 60 * 60)}`,
+                durationDays: `${parseInt(tempDuration) / (1000 * 60 * 60 * 24)}`,
+                idTask: `${xhrTasksJson[i].id}`,
+                creationDate: `${xhrTasksJson[i].creationDate}`,
+                endDate: `${xhrTasksJson[i].endDate}`,
+                status: `${xhrTasksJson[i].status}`,
+                order: `${xhrTasksJson[i].order}`
+              }
+            })
+
+          } else {
+
+            eventsToNull.push({
+              resourceId: `${xhrTasksJson[i].executor}`,
+              title: `${xhrTasksJson[i].subject}`,
+              start: `${xhrTasksJson[i].planStartDate}`,
+              end: `${xhrTasksJson[i].planEndDate}`,
+              extendedProps: {
+                durationHours: `${parseInt(tempDuration) / (1000 * 60 * 60)}`,
+                durationDays: `${parseInt(tempDuration) / (1000 * 60 * 60 * 24)}`,
+                idTask: `${xhrTasksJson[i].id}`,
+                creationDate: `${xhrTasksJson[i].creationDate}`,
+                endDate: `${xhrTasksJson[i].endDate}`,
+                status: `${xhrTasksJson[i].status}`,
+                order: `${xhrTasksJson[i].order}`
+              }
+            })
+          }
+        }
+      }
+    } catch(err) {
+      alert("Запрос не удался с источника: https://varankin_dev.elma365.ru/api/extensions/2a38760e-083a-4dd0-aebc-78b570bfd3c7/script/tasks");
+    }
+
+    window.onload = function() {
+
+      let todayDate = new Date();
+      let rusMonth = ['янв.', 'февр.', 'марта', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.']
+      let numberMonth = `${todayDate.getMonth()}`;
+
+      let elem0 = document.getElementById("fc-dom-1");
+
+
+      let h2Today = document.createElement("h2");
+      h2Today.classList.add("fc-toolbar-title");
+      h2Today.id = "fc-dom-2";
+      h2Today.style.marginTop = "5px";
+      h2Today.style.marginBottom = "5px";
+
+      h2Today.innerHTML = `Сегодня: ${todayDate.getDate()} ${rusMonth[numberMonth]} ${todayDate.getFullYear()} г.`;
+
+      elem0.after(h2Today);
+
+    };
+
+  </script>
+
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@5.11.0/main.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@5.11.0/main.js'></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.0-beta1/js/bootstrap.min.js" integrity="sha512-Hqe3s+yLpqaBbXM6VA0cnj/T56ii5YjNrMT9v+us11Q81L0wzUG0jEMNECtugqNu2Uq5MSttCg0p4KK0kCPVaQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
+  <!--<script src='node_modules/fullcalendar-scheduler/main.min.js'></script>-->
+
+
+
+  <script defer>
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+      var Calendar = FullCalendar.Calendar;
+      var Draggable = FullCalendar.Draggable;
+
+      var containerEl = document.getElementById('external-events');
+      var calendarEl = document.getElementById('calendar');
+
+
+      // initialize the external events
+      // -----------------------------------------------------------------
+
+      new Draggable(containerEl, {
+          itemSelector: '.fc-event'
+        }
+
+      );
+
+      // initialize the calendar
+      // -----------------------------------------------------------------
+
+
+      var calendar = new Calendar(calendarEl, {
+        eventMouseEnter: function(info) {
+          // тк используется готовая библиотека, то намного проще реализовать всплывающие подсказки через javascript
+          // ссылка на пример html+css: https://webref.ru/layout/pseudo-class-hover/tooltip
+
+          //  let target = info.event.target;
+
+          let tooltipElem = document.createElement('div');
+
+          tooltipElem.className = 'tooltip';
+          tooltipElem.innerHTML = `title: ${info.event.title}, idTask: ${info.event.extendedProps.idTask},<br>durationDays: ${info.event.extendedProps.durationDays}, status: ${info.event.extendedProps.status}, order: ${info.event.extendedProps.order},<br>creationDate: ${info.event.extendedProps.creationDate}, endDate: ${info.event.extendedProps.endDate}`;
+
+
+          let left = info.jsEvent.pageX;
+
+
+          let top = info.jsEvent.pageY + 10;
+
+          tooltipElem.style.left = left + 'px';
+          tooltipElem.style.top = top + 'px';
+          tooltipElem.style.position = "absolute";
+          tooltipElem.style.backgroundColor = "red";
+          tooltipElem.style.zIndex = "100";
+
+          document.body.append(tooltipElem);
+        },
+
+        //    alert(`title: ${info.event.title}, idTask: ${info.event.extendedProps.idTask}, creationDate: ${info.event.extendedProps.creationDate}, endDate: ${info.event.extendedProps.endDate}, status: ${info.event.extendedProps.status}, order: ${info.event.extendedProps.order}`);
+        eventMouseLeave: function(info) {
+          let tooltipElem = document.getElementsByClassName("tooltip")[0];
+          if (tooltipElem) {
+            tooltipElem.remove();
+            tooltipElem = null;
+          }
+        },
+        headerToolbar: {
+          start: 'prev', // will normally be on the left. if RTL, will be on the right
+          center: 'title,today',
+          end: 'next',
+        },
+        buttonText: {
+          prev: 'Пред. неделя',
+          next: 'След. неделя',
+          today: 'Перейти на сегодняшний день',
+          month: 'Месяц',
+          week: 'Неделя',
+          day: 'День',
+          list: 'Повестка дня',
+        },
+        initialView: 'resourceMyTimeline',
+        firstDay: 1,
+        locale: 'ru',
+        schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+        dayMaxEvents: true,
+        nowIndicator: true,
+        views: {
+          resourceMyTimeline: {
+            type: 'resourceTimeline',
+            duration: { week: 1 },
+            slotDuration: { days: 1 },
+            slotLabelFormat: {weekday: 'short', day: 'numeric'}
+          }
+        },
+        resourceAreaColumns: [
+          {
+            field: 'fio',
+            headerContent: 'Пользователь'
+          }
+        ],
+        resources: [...users],
+        events: [...eventsToUsers],
+        editable: true,
+        droppable: true, // this allows things to be dropped onto the calendar
+        drop: function(info) {
+          // if so, remove the element from the "Draggable Events" list
+
+          //  console.log("%o", info)
+
+          info.draggedEl.parentNode.removeChild(info.draggedEl);
+        }
+      });
+
+      calendar.render();
+    });
+
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/locales-all.js"></script>
+</head>
+
+
+
+<body>
+
+<div id="calendar-container">
+  <div id="calendar"></div>
+</div>
+
+<div id='external-events'>
+  <p style="text-align: center">
+    <strong>Backlog</strong>
+    <input id="backlog-search" placeholder="Название задачи..." type="search" oninput="findAndRenderValues()">
+  </p>
+  <div id="list-of-events"></div>
+</div>
+
+
+<script defer>
+
+  function myOnMouseOver(event) {
+    let target = event.target;
+
+    // элемент для подсказки
+
+    let tooltipElem = document.createElement('div');
+    tooltipElem.className = 'tooltip';
+
+    for (let i = 0; i < eventsToNull.length; i++) {
+      if (target.innerHTML == eventsToNull[i].title) {
+        tooltipElem.innerHTML = `"title": ${eventsToNull[i].title}, "idTask": ${eventsToNull[i].extendedProps.idTask}, "durationDays": ${eventsToNull[i].extendedProps.durationDays}, "status": ${eventsToNull[i].extendedProps.status}, "order": ${eventsToNull[i].extendedProps.order}, "creationDate": ${eventsToNull[i].extendedProps.creationDate}, "endDate": ${eventsToNull[i].extendedProps.endDate}`;
+      }
+    }
+
+    // координаты
+    let coords = target.getBoundingClientRect();
+
+    let left = coords.left;
+    if (left < 0) left = 0; // не заезжать за левый край окна
+
+    let top = coords.top + 20;
+    if (top < 0) { // если подсказка не помещается сверху, то отображать её снизу
+      top = coords.top + target.offsetHeight + 5;
+    }
+
+    tooltipElem.style.left = left + 'px';
+    tooltipElem.style.top = top + 'px';
+    tooltipElem.style.position = "fixed";
+    tooltipElem.style.backgroundColor = "red";
+    tooltipElem.style.zIndex = "100";
+
+
+    document.body.append(tooltipElem);
+  }
+
+  function myOnMouseOut () {
+    let tooltipElem = document.getElementsByClassName("tooltip")[0];
+    if (tooltipElem) {
+      tooltipElem.remove();
+      tooltipElem = null;
+    }
+  }
+
+  for (let i = 0; i < eventsToNull.length; i++) {
+
+    let divChildren = document.createElement('div');
+    divChildren.classList.add("fc-event", "fc-h-event", "fc-daygrid-event", "fc-daygrid-block-event", "backlog");
+    divChildren.id = 'draggable-el';
+
+    divChildren.setAttribute('data-event', `{"title": "${eventsToNull[i].title}", "duration": "${eventsToNull[i].extendedProps.durationHours}:00", "idTask": "${eventsToNull[i].extendedProps.idTask}", "durationDays": "${eventsToNull[i].extendedProps.durationDays}", "status": "${eventsToNull[i].extendedProps.status}", "order": "${eventsToNull[i].extendedProps.order}", "creationDate": "${eventsToNull[i].extendedProps.creationDate}", "endDate": "${eventsToNull[i].extendedProps.endDate}"}`);
+    divChildren.setAttribute('onpointerover', 'myOnMouseOver(event)');
+    divChildren.setAttribute('onpointerout', 'myOnMouseOut()');
+
+    divChildren.innerHTML = `${eventsToNull[i].title}`;
+
+
+    document.getElementById("list-of-events").append(divChildren);
+
+  }
+
+
+  function findAndRenderValues () {
+    let parentContainer = document.getElementById('list-of-events');
+
+    while (parentContainer.firstChild) {
+      myOnMouseOut();
+      parentContainer.removeChild(parentContainer.firstChild);
+    }
+
+    if (document.getElementById("backlog-search").value == null) {
+
+      for (let i = 0; i < eventsToNull.length; i++) {
+
+        let divChildren = document.createElement('div');
+        divChildren.classList.add("fc-event", "fc-h-event", "fc-daygrid-event", "fc-daygrid-block-event", "backlog");
+        divChildren.id = 'draggable-el';
+
+        divChildren.setAttribute('data-event', `{"title": "${eventsToNull[i].title}", "duration": "${eventsToNull[i].extendedProps.durationHours}:00", "idTask": "${eventsToNull[i].extendedProps.idTask}", "durationDays": "${eventsToNull[i].extendedProps.durationDays}", "status": "${eventsToNull[i].extendedProps.status}", "order": "${eventsToNull[i].extendedProps.order}", "creationDate": "${eventsToNull[i].extendedProps.creationDate}", "endDate": "${eventsToNull[i].extendedProps.endDate}"}`);
+        divChildren.setAttribute('onpointerover', 'myOnMouseOver(event)');
+        divChildren.setAttribute('onpointerout', 'myOnMouseOut()');
+
+        divChildren.innerHTML = `${eventsToNull[i].title}`;
+
+        document.getElementById("list-of-events").append(divChildren);
+      }
+    } else {
+
+      let valueSearch = document.getElementById("backlog-search").value;
+
+      let regexp = new RegExp(`${valueSearch}`, 'gi');
+
+      for (let i = 0; i < eventsToNull.length; i++) {
+
+        let result = `${eventsToNull[i].title}`.toLowerCase().match(regexp);
+
+        if (result != null)  {
+          let divChildren = document.createElement('div');
+          divChildren.classList.add("fc-event", "fc-h-event", "fc-daygrid-event", "fc-daygrid-block-event", "backlog");
+          divChildren.id = 'draggable-el';
+
+          divChildren.setAttribute('data-event', `{"title": "${eventsToNull[i].title}", "duration": "${eventsToNull[i].extendedProps.durationHours}:00", "idTask": "${eventsToNull[i].extendedProps.idTask}", "durationDays": "${eventsToNull[i].extendedProps.durationDays}", "status": "${eventsToNull[i].extendedProps.status}", "order": "${eventsToNull[i].extendedProps.order}", "creationDate": "${eventsToNull[i].extendedProps.creationDate}", "endDate": "${eventsToNull[i].extendedProps.endDate}"}`);
+          divChildren.setAttribute('onpointerover', 'myOnMouseOver(event)');
+          divChildren.setAttribute('onpointerout', 'myOnMouseOut()');
+
+          divChildren.innerHTML = `${eventsToNull[i].title}`;
+
+          document.getElementById("list-of-events").append(divChildren);
+        }
+
+      }}
+
+  }
+
+</script>
+
+
+<script src="js/vendor/modernizr-3.11.2.min.js"></script>
+<script src="js/plugins.js"></script>
+<!--<script src="js/main.js"></script>-->
+</body>
+
+</html>
