@@ -119,7 +119,8 @@
 
       let todayDate = new Date();
       let rusMonth = ['янв.', 'февр.', 'марта', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.']
-      let numberMonth = `${todayDate.getMonth()}`;
+      let numberMonth = todayDate.getMonth();
+      let dayOfMonth = todayDate.getDate();
 
       let elem0 = document.getElementById("fc-dom-1");
 
@@ -129,10 +130,24 @@
       h2Today.id = "fc-dom-2";
       h2Today.style.marginTop = "5px";
       h2Today.style.marginBottom = "5px";
+      h2Today.style.textDecoration = "underline";
 
-      h2Today.innerHTML = `Сегодня: ${todayDate.getDate()} ${rusMonth[numberMonth]} ${todayDate.getFullYear()} г.`;
+      h2Today.innerHTML = `Сегодня: ${dayOfMonth} ${rusMonth[numberMonth]} ${todayDate.getFullYear()} г.`;
 
       elem0.after(h2Today);
+
+      // если пользователь оставил окно открытым на весь день, то через каждые 10 минут будет проверятся число месяца для смены "сегодня"
+      let checkDate = setInterval(function () {
+
+        let tempDate = new Date();
+
+        if (dayOfMonth != tempDate.getDate()) {
+          dayOfMonth = tempDate.getDate();
+
+          h2Today.innerHTML = `Сегодня: ${dayOfMonth} ${rusMonth[numberMonth]} ${tempDate.getFullYear()} г.`;
+
+        }
+      }, 600000);
 
     };
 
@@ -220,6 +235,8 @@
           list: 'Повестка дня',
         },
         initialView: 'resourceMyTimeline',
+        contentHeight: 635,
+        resourceAreaWidth: "15%",
         firstDay: 1,
         locale: 'ru',
         schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
@@ -341,10 +358,11 @@
 
 
   function findAndRenderValues () {
+    myOnMouseOut();
+
     let parentContainer = document.getElementById('list-of-events');
 
     while (parentContainer.firstChild) {
-      myOnMouseOut();
       parentContainer.removeChild(parentContainer.firstChild);
     }
 
@@ -372,7 +390,7 @@
 
       for (let i = 0; i < eventsToNull.length; i++) {
 
-        let result = `${eventsToNull[i].title}`.toLowerCase().match(regexp);
+        let result = `${eventsToNull[i].title}`.match(regexp);
 
         if (result != null)  {
           let divChildren = document.createElement('div');
